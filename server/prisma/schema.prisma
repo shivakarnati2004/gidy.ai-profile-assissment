@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  username       String           @unique
+  passwordHash   String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  profile        Profile?
+  skills         Skill[]
+  experience     Experience[]
+  education      Education[]
+  certifications Certification[]
+  socialLinks    SocialLink[]
+  careerGoals    CareerGoal[]
+}
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  displayName       String   @default("")
+  avatarUrl         String?
+  headline          String?
+  bio               String?
+  location          String?
+  contactEmail      String?
+  avatarInitials    String?
+  resumeUrl         String?
+  levelBadge        String?
+  graduateBadge     String?
+  rewardLeague      String?
+  rewardRank        Int?
+  rewardPoints      Int?
+  completionPercent Int?
+  user              User     @relation(fields: [userId], references: [id])
+}
+
+model Skill {
+  id           String             @id @default(cuid())
+  userId       String
+  name         String
+  order        Int?
+  user         User               @relation(fields: [userId], references: [id])
+  endorsements SkillEndorsement[]
+}
+
+model SkillEndorsement {
+  id            String   @id @default(cuid())
+  skillId       String
+  endorserEmail String
+  createdAt     DateTime @default(now())
+  skill         Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, endorserEmail])
+}
+
+model Experience {
+  id          String  @id @default(cuid())
+  userId      String
+  title       String
+  company     String
+  location    String
+  dates       String
+  description String
+  order       Int?
+  user        User    @relation(fields: [userId], references: [id])
+}
+
+model Education {
+  id          String  @id @default(cuid())
+  userId      String
+  degree      String
+  institution String
+  year        String
+  grade       String?
+  order       Int?
+  user        User    @relation(fields: [userId], references: [id])
+}
+
+model Certification {
+  id           String  @id @default(cuid())
+  userId       String
+  name         String
+  credentialId String
+  link         String?
+  order        Int?
+  user         User    @relation(fields: [userId], references: [id])
+}
+
+model SocialLink {
+  id       String  @id @default(cuid())
+  userId   String
+  platform String
+  url      String
+  order    Int?
+  user     User    @relation(fields: [userId], references: [id])
+}
+
+model CareerGoal {
+  id          String  @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  order       Int?
+  user        User    @relation(fields: [userId], references: [id])
+}
+
+model OtpCode {
+  id         String   @id @default(cuid())
+  email      String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
