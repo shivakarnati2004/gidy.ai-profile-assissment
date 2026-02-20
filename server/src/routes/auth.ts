@@ -156,9 +156,6 @@ router.post("/request-otp", asyncHandler(async (req, res) => {
   }
 
   const email = normalizeEmail(emailInput);
-  const code = generateOtp();
-  const codeHash = hashOtp(code);
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser?.passwordHash) {
@@ -177,6 +174,14 @@ router.post("/request-otp", asyncHandler(async (req, res) => {
 
     await ensureProfileForUser(prisma, user.id, email);
   }
+
+  if (env.disableOtpVerification) {
+    return res.json({ message: "OTP verification bypassed for this environment" });
+  }
+
+  const code = generateOtp();
+  const codeHash = hashOtp(code);
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
   await prisma.otpCode.deleteMany({
     where: {
@@ -202,30 +207,32 @@ router.post("/verify-otp", asyncHandler(async (req, res) => {
   const emailInput = req.body?.email as string | undefined;
   const codeInput = req.body?.code as string | undefined;
 
-  if (!emailInput || !codeInput) {
+  if (!emailInput || (!env.disableOtpVerification && !codeInput)) {
     return res.status(400).json({ error: "Email and code are required" });
   }
 
   const email = normalizeEmail(emailInput);
-  const codeHash = hashOtp(codeInput.trim());
+  if (!env.disableOtpVerification) {
+    const codeHash = hashOtp((codeInput ?? "").trim());
 
-  const record = await prisma.otpCode.findFirst({
-    where: {
-      email,
-      consumedAt: null,
-      expiresAt: { gt: new Date() }
-    },
-    orderBy: { createdAt: "desc" }
-  });
+    const record = await prisma.otpCode.findFirst({
+      where: {
+        email,
+        consumedAt: null,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: { createdAt: "desc" }
+    });
 
-  if (!record || record.codeHash !== codeHash) {
-    return res.status(401).json({ error: "Invalid or expired code" });
+    if (!record || record.codeHash !== codeHash) {
+      return res.status(401).json({ error: "Invalid or expired code" });
+    }
+
+    await prisma.otpCode.update({
+      where: { id: record.id },
+      data: { consumedAt: new Date() }
+    });
   }
-
-  await prisma.otpCode.update({
-    where: { id: record.id },
-    data: { consumedAt: new Date() }
-  });
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {

@@ -12,6 +12,14 @@ const parseNumber = (value: string | undefined, fallback: number) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const parseBoolean = (value: string | undefined, fallback = false) => {
+  if (!value) {
+    return fallback;
+  }
+
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+};
+
 const isProduction = process.env.NODE_ENV === "production";
 const jwtSecret = process.env.JWT_SECRET ?? "dev-secret";
 const configuredCorsOrigin = process.env.CORS_ORIGIN ?? process.env.FRONTEND_URL ?? "";
@@ -39,5 +47,6 @@ export const env = {
   smtpUser: process.env.SMTP_USER ?? "",
   smtpPass: process.env.SMTP_PASS ?? process.env.SMTP_PASSWORD ?? "",
   smtpFrom: process.env.SMTP_FROM ?? process.env.EMAIL_FROM ?? "",
-  demoUserEmail: process.env.DEMO_USER_EMAIL ?? ""
+  demoUserEmail: process.env.DEMO_USER_EMAIL ?? "",
+  disableOtpVerification: parseBoolean(process.env.DISABLE_OTP_VERIFICATION, false)
 };

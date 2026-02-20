@@ -115,6 +115,7 @@ Already auto-wired by Blueprint:
 - `DATABASE_URL` (from Render Postgres)
 - `JWT_SECRET` (auto-generated)
 - `NODE_ENV=production`
+- `DISABLE_OTP_VERIFICATION=true`
 
 6) Set frontend environment variable (required)
 
@@ -130,8 +131,8 @@ In `profile-frontend` -> **Environment**, set:
 
 Backend logs should include:
 - build success (`npm run build`)
-- migration success (`npm run prisma:migrate:deploy`)
-- server start (`npm run start`)
+- migration success (`npm run start:render` runs prisma generate + migrate deploy)
+- server start (`npm run start:render`)
 
 Frontend logs should include:
 - static build success (`npm run build`)
@@ -163,7 +164,7 @@ The project includes `public/_redirects` so direct route refresh works on Render
 11) Authentication behavior when SMTP is not configured
 
 - OTP routes need SMTP to send real codes.
-- If you skip SMTP on free tier, signup flow using OTP will not complete in real-world usage.
+- For this free-tier setup, `DISABLE_OTP_VERIFICATION=true` bypasses OTP checks so signup can continue without SMTP.
 - Existing users can still log in if already present in database.
 
 12) Optional SMTP setup (recommended for full auth)
@@ -201,8 +202,7 @@ With auto-deploy enabled, Render redeploys automatically.
 
 Backend (`profile-backend`):
 - Build: `npm install && npm run build`
-- Pre-deploy: `npm run prisma:migrate:deploy`
-- Start: `npm run start`
+- Start: `npm run start:render`
 
 Frontend (`profile-frontend`):
 - Build: `npm install && npm run build`
