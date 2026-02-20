@@ -216,6 +216,9 @@ Frontend (`profile-frontend`):
 	- Ensure backend `CORS_ORIGIN` exactly matches frontend URL.
 - `Frontend loads but API fails`:
 	- Check frontend `VITE_API_URL` points to backend Render URL.
+- `Login/Create Account shows Request failed with status 404`:
+	- Frontend is likely calling its own static site instead of backend API.
+	- Set `VITE_API_URL` in `profile-frontend` to your backend URL and redeploy frontend.
 - `Database errors`:
 	- Check backend deploy logs for `prisma migrate deploy` output.
 - `404 on refresh`:

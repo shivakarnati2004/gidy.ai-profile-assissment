@@ -32,6 +32,26 @@ type ApiError = {
   error?: string;
 };
 
+const isLikelyApiBaseMisconfigured = (path: string, status: number) => {
+  if (!import.meta.env.PROD) {
+    return false;
+  }
+
+  if (status !== 404) {
+    return false;
+  }
+
+  if (API_BASE_URL) {
+    return false;
+  }
+
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return path.startsWith("/api/") && window.location.hostname.endsWith("onrender.com");
+};
+
 const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -51,6 +71,10 @@ const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> 
   if (!response.ok) {
     if (response.status === 401) {
       clearAuthSession();
+    }
+
+    if (isLikelyApiBaseMisconfigured(path, response.status)) {
+      throw new Error("API not configured. Set VITE_API_URL in Render frontend environment to your backend URL and redeploy frontend.");
     }
 
     let message = `Request failed with status ${response.status}`;
