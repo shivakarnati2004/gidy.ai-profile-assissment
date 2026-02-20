@@ -32,6 +32,18 @@ type ApiError = {
   error?: string;
 };
 
+const buildNetworkErrorMessage = () => {
+  if (!import.meta.env.PROD) {
+    return "Unable to reach API. Ensure backend is running on http://localhost:4000.";
+  }
+
+  if (!API_BASE_URL) {
+    return "Unable to reach API. Set VITE_API_URL in Render frontend environment to your backend URL and redeploy frontend.";
+  }
+
+  return `Unable to reach API at ${API_BASE_URL}. Check backend health, CORS_ORIGIN, and FRONTEND_URL in Render, then redeploy backend/frontend.`;
+};
+
 const isLikelyApiBaseMisconfigured = (path: string, status: number) => {
   if (!import.meta.env.PROD) {
     return false;
@@ -63,10 +75,15 @@ const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> 
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers
+    });
+  } catch {
+    throw new Error(buildNetworkErrorMessage());
+  }
 
   if (!response.ok) {
     if (response.status === 401) {

@@ -219,6 +219,9 @@ Frontend (`profile-frontend`):
 - `Login/Create Account shows Request failed with status 404`:
 	- Frontend is likely calling its own static site instead of backend API.
 	- Set `VITE_API_URL` in `profile-frontend` to your backend URL and redeploy frontend.
+- `Login/Create Account shows Unable to reach API`:
+	- If message says `Set VITE_API_URL`, set frontend `VITE_API_URL` to backend URL and redeploy frontend.
+	- If message includes backend URL, check backend `/api/health`, then verify `CORS_ORIGIN` and `FRONTEND_URL` and redeploy backend.
 - `Database errors`:
 	- Check backend deploy logs for `prisma migrate deploy` output.
 - `404 on refresh`:
