@@ -203,7 +203,7 @@ With auto-deploy enabled, Render redeploys automatically.
 ### Commands used by Render from this repo
 
 Backend (`profile-backend`):
-- Build: `npm install && npm run build`
+- Build: `npm install --include=dev && npm run build`
 - Start: `npm run start:render`
 
 Frontend (`profile-frontend`):
