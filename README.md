@@ -214,6 +214,7 @@ Frontend (`profile-frontend`):
 
 - `CORS blocked`:
 	- Ensure backend `CORS_ORIGIN` exactly matches frontend URL.
+	- Do not set `CORS_ORIGIN` to backend URL; it must be frontend origin only.
 - `Frontend loads but API fails`:
 	- Check frontend `VITE_API_URL` points to backend Render URL.
 - `Login/Create Account shows Request failed with status 404`:

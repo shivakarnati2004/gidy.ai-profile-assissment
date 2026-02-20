@@ -22,11 +22,35 @@ const parseBoolean = (value: string | undefined, fallback = false) => {
 
 const isProduction = process.env.NODE_ENV === "production";
 const jwtSecret = process.env.JWT_SECRET ?? "dev-secret";
-const configuredCorsOrigin = process.env.CORS_ORIGIN ?? process.env.FRONTEND_URL ?? "";
-const corsOrigins = configuredCorsOrigin
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+
+const normalizeOrigin = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.origin;
+  } catch {
+    return trimmed.replace(/\/+$/, "");
+  }
+};
+
+const backendOrigin = process.env.RENDER_EXTERNAL_URL
+  ? normalizeOrigin(process.env.RENDER_EXTERNAL_URL)
+  : process.env.RENDER_EXTERNAL_HOSTNAME
+  ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}`
+  : "";
+
+const corsOrigins = [
+  ...(process.env.CORS_ORIGIN ?? "").split(","),
+  process.env.FRONTEND_URL ?? ""
+]
+  .map(normalizeOrigin)
+  .filter(Boolean)
+  .filter((origin, index, list) => list.indexOf(origin) === index)
+  .filter((origin) => !backendOrigin || origin !== backendOrigin);
 
 if (isProduction && jwtSecret === "dev-secret") {
   throw new Error("JWT_SECRET must be set in production");
