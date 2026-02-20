@@ -162,18 +162,18 @@ router.post("/request-otp", asyncHandler(async (req, res) => {
     return res.status(409).json({ error: "Account already exists. Please login with password." });
   }
 
-  let user = existingUser;
-  if (!existingUser) {
+  const user = existingUser ?? await (async () => {
     const username = await ensureUniqueUsername(email);
-    user = await prisma.user.create({
+    const createdUser = await prisma.user.create({
       data: {
         email,
         username
       }
     });
 
-    await ensureProfileForUser(prisma, user.id, email);
-  }
+    await ensureProfileForUser(prisma, createdUser.id, email);
+    return createdUser;
+  })();
 
   if (env.disableOtpVerification) {
     const signupToken = issueSignupToken(email);
