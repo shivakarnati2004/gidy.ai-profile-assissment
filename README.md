@@ -68,6 +68,13 @@ npm run dev:frontend:8082
 
 This project can be deployed on Render using the included Blueprint file: `render.yaml`.
 
+### Live deployment status
+
+- Frontend (live): `https://profile-frontend-rmjm.onrender.com/`
+- The complete website is deployed and usable on Render.
+- You can create an account, log in, and use the profile features on the deployed app.
+- SMTP OTP verification is implemented in this codebase, but in the current free-tier deployment OTP verification is bypassed (`DISABLE_OTP_VERIFICATION=true`) because SMTP is not configured for the deployed environment.
+
 ### Important free-tier note first
 
 Render plan availability can change by region/time. If a free PostgreSQL option is not shown in your Render account, use the lowest available Postgres plan.
