@@ -105,6 +105,8 @@ Render will create:
 - `profile-backend` (Node web service)
 - `profile-frontend` (Static site)
 
+Note: the static service in `render.yaml` intentionally omits a `plan` field, because some Render accounts reject `plan: free` for `env: static` services.
+
 5) Set backend environment variables (required)
 
 In `profile-backend` -> **Environment**, set:

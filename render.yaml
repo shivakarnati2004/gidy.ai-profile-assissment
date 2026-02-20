@@ -44,7 +44,6 @@ services:
     name: profile-frontend
     env: static
     rootDir: .
-    plan: free
     autoDeploy: true
     buildCommand: npm install && npm run build
     staticPublishPath: dist
