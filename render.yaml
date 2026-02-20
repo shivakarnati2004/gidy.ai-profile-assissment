@@ -2,6 +2,7 @@ databases:
   - name: profile-postgres
     databaseName: profile_db
     user: profile_user
+    plan: free
 
 services:
   - type: web
@@ -11,7 +12,8 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: npm install && npm run build
-    startCommand: npm run start:render
+    preDeployCommand: npm run prisma:migrate:deploy
+    startCommand: npm run start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -20,15 +22,11 @@ services:
         fromDatabase:
           name: profile-postgres
           property: connectionString
-      - key: PORT
-        value: 10000
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
         sync: false
       - key: FRONTEND_URL
-        sync: false
-      - key: PUBLIC_API_URL
         sync: false
       - key: SMTP_HOST
         sync: false
@@ -45,6 +43,8 @@ services:
     name: profile-frontend
     env: static
     rootDir: .
+    plan: free
+    autoDeploy: true
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     pullRequestPreviewsEnabled: true

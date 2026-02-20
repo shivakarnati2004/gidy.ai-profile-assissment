@@ -1,72 +1,11 @@
-import { Router, type Request } from "express";
+import { Router } from "express";
 import type { Prisma } from "@prisma/client";
-import multer from "multer";
-import path from "node:path";
-import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import prisma from "../lib/prisma";
-import { env } from "../lib/env";
 import { requireAuth } from "../middleware/auth";
 import { ensureProfileForUser } from "../lib/profile";
 import { asyncHandler } from "../lib/async-handler";
 
 const router = Router();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadDir = path.resolve(__dirname, "../../uploads");
-
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname) || ".jpg";
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-    cb(null, fileName);
-  }
-});
-
-const imageUpload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      cb(new Error("Only image files are allowed"));
-      return;
-    }
-    cb(null, true);
-  }
-});
-
-const allowedResumeMimeTypes = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-]);
-
-const resumeUpload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (!allowedResumeMimeTypes.has(file.mimetype)) {
-      cb(new Error("Only PDF, DOC, and DOCX files are allowed"));
-      return;
-    }
-    cb(null, true);
-  }
-});
-
-const getPublicBaseUrl = (req: Request) => {
-  if (env.publicApiUrl) {
-    return env.publicApiUrl.replace(/\/+$/, "");
-  }
-
-  return `${req.protocol}://${req.get("host")}`;
-};
 
 router.get("/:username", requireAuth, asyncHandler(async (req, res) => {
   const username = req.params.username;
@@ -296,86 +235,6 @@ router.put("/:username", requireAuth, asyncHandler(async (req, res) => {
   });
 
   return res.json({ message: "Profile updated" });
-}));
-
-router.post("/:username/photo", requireAuth, imageUpload.single("photo"), asyncHandler(async (req, res) => {
-  const username = req.params.username;
-  const payload = req.auth;
-
-  const user = await prisma.user.findUnique({ where: { username }, include: { profile: true } });
-
-  if (!user) {
-    return res.status(404).json({ error: "Profile not found" });
-  }
-
-  if (!payload || payload.userId !== user.id) {
-    return res.status(403).json({ error: "Not authorized to upload photo for this profile" });
-  }
-
-  if (!req.file) {
-    return res.status(400).json({ error: "Photo file is required" });
-  }
-
-  const avatarPath = `/uploads/${req.file.filename}`;
-  const avatarUrl = `${getPublicBaseUrl(req)}${avatarPath}`;
-
-  if (user.profile) {
-    await prisma.profile.update({
-      where: { userId: user.id },
-      data: { avatarUrl }
-    });
-  } else {
-    await prisma.profile.create({
-      data: {
-        userId: user.id,
-        avatarUrl,
-        contactEmail: user.email,
-        displayName: ""
-      }
-    });
-  }
-
-  return res.status(201).json({ avatarUrl });
-}));
-
-router.post("/:username/resume", requireAuth, resumeUpload.single("resume"), asyncHandler(async (req, res) => {
-  const username = req.params.username;
-  const payload = req.auth;
-
-  const user = await prisma.user.findUnique({ where: { username }, include: { profile: true } });
-
-  if (!user) {
-    return res.status(404).json({ error: "Profile not found" });
-  }
-
-  if (!payload || payload.userId !== user.id) {
-    return res.status(403).json({ error: "Not authorized to upload resume for this profile" });
-  }
-
-  if (!req.file) {
-    return res.status(400).json({ error: "Resume file is required" });
-  }
-
-  const resumePath = `/uploads/${req.file.filename}`;
-  const resumeUrl = `${getPublicBaseUrl(req)}${resumePath}`;
-
-  if (user.profile) {
-    await prisma.profile.update({
-      where: { userId: user.id },
-      data: { resumeUrl }
-    });
-  } else {
-    await prisma.profile.create({
-      data: {
-        userId: user.id,
-        resumeUrl,
-        contactEmail: user.email,
-        displayName: ""
-      }
-    });
-  }
-
-  return res.status(201).json({ resumeUrl });
 }));
 
 export default router;

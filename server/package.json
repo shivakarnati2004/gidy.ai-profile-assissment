@@ -6,10 +6,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "start:render": "npm run prisma:generate && npm run prisma:deploy && node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
@@ -20,7 +20,8 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
-    "nodemailer": "^6.9.15"
+    "nodemailer": "^6.9.15",
+    "vite_react_shadcn_ts": "file:.."
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

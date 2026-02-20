@@ -48,6 +48,9 @@ const waitForBackend = async (attempts = 25, delayMs = 400) => {
 };
 
 const children = [];
+const npmExecutable = process.env.npm_execpath
+  ? [process.execPath, [process.env.npm_execpath]]
+  : [process.platform === "win32" ? "npm.cmd" : "npm", []];
 
 const launch = (cmd, args) => {
   const child = spawn(cmd, args, { stdio: "inherit", shell: false });
@@ -78,7 +81,7 @@ if (backendHealthy) {
   console.log("Backend already running on port 4000.");
 } else if (await isPortFree(backendPort)) {
   console.log("Starting backend on port 4000...");
-  launch(process.platform === "win32" ? "npm.cmd" : "npm", ["--prefix", "server", "run", "dev"]);
+  launch(npmExecutable[0], [...npmExecutable[1], "--prefix", "server", "run", "dev"]);
 
   const ready = await waitForBackend();
   if (!ready) {

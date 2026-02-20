@@ -2,7 +2,7 @@ import { createServer } from "node:net";
 import { spawn } from "node:child_process";
 import path from "node:path";
 
-const frontendPorts = [8080, 8082, 5173];
+const frontendPorts = [8082, 5173];
 
 const isPortFree = (port) =>
   new Promise((resolve) => {

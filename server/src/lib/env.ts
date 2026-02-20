@@ -14,17 +14,26 @@ const parseNumber = (value: string | undefined, fallback: number) => {
 
 const isProduction = process.env.NODE_ENV === "production";
 const jwtSecret = process.env.JWT_SECRET ?? "dev-secret";
+const configuredCorsOrigin = process.env.CORS_ORIGIN ?? process.env.FRONTEND_URL ?? "";
+const corsOrigins = configuredCorsOrigin
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 if (isProduction && jwtSecret === "dev-secret") {
   throw new Error("JWT_SECRET must be set in production");
 }
 
+if (isProduction && corsOrigins.length === 0) {
+  throw new Error("CORS_ORIGIN (or FRONTEND_URL) must be set in production");
+}
+
 export const env = {
   port: parseNumber(process.env.PORT, 4000),
   databaseUrl: process.env.DATABASE_URL ?? "",
-  corsOrigin: process.env.CORS_ORIGIN ?? process.env.FRONTEND_URL ?? "*",
+  corsOrigins: corsOrigins.length > 0 ? corsOrigins : ["*"],
   jwtSecret,
-  publicApiUrl: process.env.PUBLIC_API_URL ?? process.env.RENDER_EXTERNAL_URL ?? "",
+  publicApiUrl: process.env.PUBLIC_API_URL ?? "",
   smtpHost: process.env.SMTP_HOST ?? "",
   smtpPort: parseNumber(process.env.SMTP_PORT, 587),
   smtpUser: process.env.SMTP_USER ?? "",

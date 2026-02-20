@@ -1,8 +1,32 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || (import.meta.env.PROD ? "" : "http://localhost:4000");
 
 const TOKEN_KEY = "profile_auth_token";
 const USERNAME_KEY = "profile_username";
 const EMAIL_KEY = "profile_email";
+
+const readStorage = (key: string) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeStorage = (key: string, value: string) => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage write failures (private mode / blocked storage)
+  }
+};
+
+const removeStorage = (key: string) => {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Ignore storage remove failures
+  }
+};
 
 type ApiError = {
   error?: string;
@@ -45,22 +69,22 @@ const apiFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> 
   return (await response.json()) as T;
 };
 
-export const getAuthToken = () => localStorage.getItem(TOKEN_KEY);
+export const getAuthToken = () => readStorage(TOKEN_KEY);
 
-export const getStoredUsername = () => localStorage.getItem(USERNAME_KEY);
+export const getStoredUsername = () => readStorage(USERNAME_KEY);
 
-export const getStoredEmail = () => localStorage.getItem(EMAIL_KEY);
+export const getStoredEmail = () => readStorage(EMAIL_KEY);
 
 export const setAuthSession = (token: string, username: string, email: string) => {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USERNAME_KEY, username);
-  localStorage.setItem(EMAIL_KEY, email);
+  writeStorage(TOKEN_KEY, token);
+  writeStorage(USERNAME_KEY, username);
+  writeStorage(EMAIL_KEY, email);
 };
 
 export const clearAuthSession = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USERNAME_KEY);
-  localStorage.removeItem(EMAIL_KEY);
+  removeStorage(TOKEN_KEY);
+  removeStorage(USERNAME_KEY);
+  removeStorage(EMAIL_KEY);
 };
 
 export const requestOtp = (email: string) => {
@@ -171,60 +195,6 @@ export const updateProfile = (username: string, payload: ProfilePayload) => {
     method: "PUT",
     body: JSON.stringify(payload)
   });
-};
-
-export const uploadProfilePhoto = async (username: string, file: File) => {
-  const token = getAuthToken();
-  const formData = new FormData();
-  formData.append("photo", file);
-
-  const response = await fetch(`${API_BASE_URL}/api/profile/${username}/photo`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: formData
-  });
-
-  if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
-    try {
-      const data = (await response.json()) as ApiError;
-      if (data?.error) {
-        message = data.error;
-      }
-    } catch (error) {
-      // Ignore JSON parse errors
-    }
-    throw new Error(message);
-  }
-
-  return response.json() as Promise<{ avatarUrl: string }>;
-};
-
-export const uploadResumeFile = async (username: string, file: File) => {
-  const token = getAuthToken();
-  const formData = new FormData();
-  formData.append("resume", file);
-
-  const response = await fetch(`${API_BASE_URL}/api/profile/${username}/resume`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: formData
-  });
-
-  if (!response.ok) {
-    let message = `Request failed with status ${response.status}`;
-    try {
-      const data = (await response.json()) as ApiError;
-      if (data?.error) {
-        message = data.error;
-      }
-    } catch (error) {
-      // Ignore JSON parse errors
-    }
-    throw new Error(message);
-  }
-
-  return response.json() as Promise<{ resumeUrl: string }>;
 };
 
 export const endorseSkill = (skillId: string, endorserEmail: string) => {

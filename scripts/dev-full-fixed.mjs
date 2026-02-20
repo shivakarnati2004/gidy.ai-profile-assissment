@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 import { request } from "node:http";
 
 const backendPort = 4000;
-const frontendPort = 8080;
+const frontendPort = 8082;
 
 const isPortFree = (port) =>
   new Promise((resolve) => {
@@ -38,6 +38,29 @@ const isBackendHealthy = () =>
     req.end();
   });
 
+const isFrontendReachable = () =>
+  new Promise((resolve) => {
+    const req = request(
+      {
+        hostname: "localhost",
+        port: frontendPort,
+        path: "/",
+        method: "GET",
+        timeout: 1200
+      },
+      (res) => {
+        resolve((res.statusCode ?? 0) >= 200 && (res.statusCode ?? 0) < 500);
+      }
+    );
+
+    req.on("error", () => resolve(false));
+    req.on("timeout", () => {
+      req.destroy();
+      resolve(false);
+    });
+    req.end();
+  });
+
 const waitForBackend = async (attempts = 25, delayMs = 400) => {
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (await isBackendHealthy()) {
@@ -49,6 +72,9 @@ const waitForBackend = async (attempts = 25, delayMs = 400) => {
 };
 
 const children = [];
+const npmExecutable = process.env.npm_execpath
+  ? [process.execPath, [process.env.npm_execpath]]
+  : [process.platform === "win32" ? "npm.cmd" : "npm", []];
 
 const launch = (cmd, args) => {
   const child = spawn(cmd, args, { stdio: "inherit", shell: false });
@@ -79,7 +105,7 @@ if (backendHealthy) {
   console.log("Backend already running on port 4000.");
 } else if (await isPortFree(backendPort)) {
   console.log("Starting backend on port 4000...");
-  launch(process.platform === "win32" ? "npm.cmd" : "npm", ["--prefix", "server", "run", "dev"]);
+  launch(npmExecutable[0], [...npmExecutable[1], "--prefix", "server", "run", "dev"]);
 
   const ready = await waitForBackend();
   if (!ready) {
@@ -93,9 +119,13 @@ if (backendHealthy) {
 }
 
 if (!(await isPortFree(frontendPort))) {
-  console.error("Port 8080 is occupied. Free port 8080 for permanent localhost mode or use npm run dev:full:auto.");
-  process.exit(1);
+  if (await isFrontendReachable()) {
+    console.log("Frontend already reachable on port 8082.");
+  } else {
+    console.error("Port 8082 is occupied by another process. Free port 8082 for permanent localhost mode.");
+    process.exit(1);
+  }
+} else {
+  console.log("Starting frontend on fixed port 8082...");
+  launch(npmExecutable[0], [...npmExecutable[1], "run", "dev:frontend:8082"]);
 }
-
-console.log("Starting frontend on fixed port 8080...");
-launch(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "dev:frontend:8080"]);

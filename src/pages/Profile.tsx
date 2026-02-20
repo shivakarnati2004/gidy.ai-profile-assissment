@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { clearAuthSession, endorseSkill, fetchProfile, getStoredEmail, getStoredUsername, updateProfile, uploadProfilePhoto, uploadResumeFile } from "@/lib/api";
+import { clearAuthSession, endorseSkill, fetchProfile, getStoredEmail, getStoredUsername, updateProfile } from "@/lib/api";
 import { buildBioSummary } from "@/lib/utils";
 import { MapPin, Mail, Download, Award, Target, Briefcase, GraduationCap, FileCheck, ExternalLink, Pencil, Plus, Trash2, WandSparkles } from "lucide-react";
 
@@ -69,10 +69,6 @@ const Profile = () => {
   const [endorserEmail, setEndorserEmail] = useState(getStoredEmail() ?? "");
   const [endorsementCounts, setEndorsementCounts] = useState<Record<string, number>>({});
   const [endorsementMessage, setEndorsementMessage] = useState<string | null>(null);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoMessage, setPhotoMessage] = useState<string | null>(null);
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [resumeMessage, setResumeMessage] = useState<string | null>(null);
   const [activeExperienceIndex, setActiveExperienceIndex] = useState(0);
   const [experienceItems, setExperienceItems] = useState<ExperienceItem[]>([]);
   const [educationItems, setEducationItems] = useState<EducationItem[]>([]);
@@ -152,40 +148,6 @@ const Profile = () => {
   const handleLogout = () => {
     clearAuthSession();
     navigate("/login", { replace: true });
-  };
-
-  const handleUploadPhoto = async () => {
-    if (!username || !photoFile) {
-      setPhotoMessage("Select an image file first.");
-      return;
-    }
-
-    try {
-      const uploaded = await uploadProfilePhoto(username, photoFile);
-      setFormProfile((prev) => ({ ...prev, avatarUrl: uploaded.avatarUrl }));
-      setPhotoMessage("Profile photo uploaded.");
-      setPhotoFile(null);
-      queryClient.invalidateQueries({ queryKey: ["profile", username] });
-    } catch (error) {
-      setPhotoMessage(error instanceof Error ? error.message : "Unable to upload photo.");
-    }
-  };
-
-  const handleUploadResume = async () => {
-    if (!username || !resumeFile) {
-      setResumeMessage("Select a resume file first.");
-      return;
-    }
-
-    try {
-      const uploaded = await uploadResumeFile(username, resumeFile);
-      setFormProfile((prev) => ({ ...prev, resumeUrl: uploaded.resumeUrl }));
-      setResumeMessage("Resume uploaded.");
-      setResumeFile(null);
-      queryClient.invalidateQueries({ queryKey: ["profile", username] });
-    } catch (error) {
-      setResumeMessage(error instanceof Error ? error.message : "Unable to upload resume.");
-    }
   };
 
   useEffect(() => {
@@ -409,19 +371,14 @@ const Profile = () => {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="photoFile">Profile photo</Label>
+                      <Label htmlFor="avatarUrl">Profile photo URL</Label>
                       <Input
-                        id="photoFile"
-                        type="file"
-                        accept="image/*"
-                        onChange={(event) => setPhotoFile(event.target.files?.[0] ?? null)}
+                        id="avatarUrl"
+                        value={formProfile.avatarUrl}
+                        onChange={(event) =>
+                          setFormProfile((prev) => ({ ...prev, avatarUrl: event.target.value }))
+                        }
                       />
-                      <Button type="button" variant="outline" size="sm" onClick={handleUploadPhoto}>
-                        Upload photo
-                      </Button>
-                      {photoMessage && (
-                        <p className="text-xs text-muted-foreground">{photoMessage}</p>
-                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="avatarInitials">Avatar initials</Label>
@@ -454,21 +411,6 @@ const Profile = () => {
                           setFormProfile((prev) => ({ ...prev, resumeUrl: event.target.value }))
                         }
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="resumeFile">Resume file (PDF/DOC/DOCX)</Label>
-                      <Input
-                        id="resumeFile"
-                        type="file"
-                        accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                        onChange={(event) => setResumeFile(event.target.files?.[0] ?? null)}
-                      />
-                      <Button type="button" variant="outline" size="sm" onClick={handleUploadResume}>
-                        Upload resume
-                      </Button>
-                      {resumeMessage && (
-                        <p className="text-xs text-muted-foreground">{resumeMessage}</p>
-                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="rewardRank">Reward rank</Label>

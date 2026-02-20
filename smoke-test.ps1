@@ -2,7 +2,7 @@ $ErrorActionPreference = "Stop"
 $ts = Get-Date -Format "yyyyMMddHHmmss"
 $password = "P@ssw0rd123!"
 $base = "http://localhost:4000"
-$web = "http://localhost:8080"
+$web = "http://localhost:8082"
 $token = $null
 function Get-EnvValue($key) {
   $value = [System.Environment]::GetEnvironmentVariable($key)
