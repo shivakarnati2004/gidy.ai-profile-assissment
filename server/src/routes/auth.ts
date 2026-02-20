@@ -176,7 +176,15 @@ router.post("/request-otp", asyncHandler(async (req, res) => {
   }
 
   if (env.disableOtpVerification) {
-    return res.json({ message: "OTP verification bypassed for this environment" });
+    const signupToken = issueSignupToken(email);
+    return res.json({
+      message: "OTP verification bypassed for this environment",
+      signupToken,
+      signup: {
+        email,
+        username: user.username
+      }
+    });
   }
 
   const code = generateOtp();

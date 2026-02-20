@@ -112,7 +112,11 @@ export const clearAuthSession = () => {
 };
 
 export const requestOtp = (email: string) => {
-  return apiFetch<{ message: string }>("/api/auth/request-otp", {
+  return apiFetch<{
+    message: string;
+    signupToken?: string;
+    signup?: { username: string; email: string };
+  }>("/api/auth/request-otp", {
     method: "POST",
     body: JSON.stringify({ email })
   });

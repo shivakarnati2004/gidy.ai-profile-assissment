@@ -50,7 +50,16 @@ const Login = () => {
     setMessage(null);
 
     try {
-      await requestOtp(email);
+      const data = await requestOtp(email);
+      if (data.signupToken) {
+        setSignupToken(data.signupToken);
+        setUsername(data.signup?.username ?? "");
+        setCreateStep("password");
+        setStatus("success");
+        setMessage("OTP verification is bypassed in this environment. Set your password to finish account creation.");
+        return;
+      }
+
       setCreateStep("verify");
       setStatus("success");
       setMessage("OTP sent. Check your email.");
